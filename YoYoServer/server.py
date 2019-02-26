@@ -11,7 +11,7 @@ import hashlib #for md5 calculator
 import cgi
 import sys
 
-PORT_NUMBER = 5005
+PORT_NUMBER = 80
 BUFFER_SIZE = 1024
 
 db_log_host_name = "log.cl7siflajy7i.us-west-2.rds.amazonaws.com"
