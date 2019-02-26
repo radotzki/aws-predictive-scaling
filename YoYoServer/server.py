@@ -108,6 +108,7 @@ class myHandler(BaseHTTPRequestHandler):
 	def do_GET(self):
 		self.send_response(200)
 		self.send_header('Content-type','text/html')
+		self.send_header('2**2**2**2**2', 2**2**2**2**2) #simple server with mathematic calculation
 		self.end_headers()
 		self.wfile.write("Hello World! I'm running...")
 		return
@@ -132,7 +133,6 @@ class myHandler(BaseHTTPRequestHandler):
 			self.send_response(200)
 			#self.send_header('Content-md5',md5)
 			#self.send_header('Content-file-name', file_name)
-			self.send_header('2**2**2**2**2', 2**2**2**2**2) #simple server with mathematic calculation
 			self.send_header('Server-ip',server_ip)
 			self.send_header('Client-ip',str(self.client_address))
 			self.end_headers()
