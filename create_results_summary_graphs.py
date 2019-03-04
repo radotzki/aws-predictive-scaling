@@ -18,7 +18,7 @@ from matplotlib.ticker import Formatter
 import matplotlib.gridspec as gridspec
 matplotlib.rcParams.update({'font.size': 14.7})
 
-results_dir = r"C:\Users\Mor\Documents\GitHub\YoYoServer\aws\results\good\\"
+results_dir = "./logs/"
 
 class ErrorRowException(Exception):
     pass
@@ -586,21 +586,22 @@ def main():
     #    exit(1)
     #else:
         #results_file = results_dir+ sys.argv[1]
-        file_name = r"20160102_results_134248.csv"
-        results_file = results_dir+file_name
+        # file_name = r"20160102_results_134248.csv"
+        # results_file = results_dir+file_name
         #scaling_log = results_dir+sys.argv[2]
-        scaling_log = results_dir+file_name+"_scaling_log.txt"
+        scaling_log = results_dir + "scaling_log.txt"
         #attack_log = results_dir+sys.argv[3]
-        attack_log = results_dir+file_name+"_attack_log.txt"
+        attack_log = results_dir+ "attack_log.txt"
 
-        users_file = results_dir+r"20160102_users_results_134248.csv"
+        results_file = results_dir+"attack_results_log.csv"
+        users_file = results_dir+"attack_results_log.csv"
         #users_file = None
         #max_time = datetime.datetime.strptime("2015/12/31 11:00:00.000", "%Y/%m/%d %H:%M:%S.%f")
         bins, attack_log = create_results_summary(scaling_log, results_file, users_file, attack_log, 30)
 
 
         #create_graph(bins, attack_log, results_dir+file_name[:-4]+"_7.png")
-        create_graph_with_prob(bins, attack_log, results_dir+file_name[:-4]+"_8.png")
+        create_graph_with_prob(bins, attack_log, results_dir+"graph_8.png")
         #for bin in bins:
         #    print "---------"
         #    print bin
