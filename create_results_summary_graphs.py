@@ -97,9 +97,9 @@ def parse_scaling_activity(scaling_activity_data):
         dateTime = dateutil.parser.parse(part.split(": ")[0][2:-1])
         dateTime = dateTime.replace(tzinfo=None)
         action = part.split(": ")[1][2:-1]
-        if action == 'autoscaling:EC2_INSTANCE_LAUNCH':
+        if action == 'autoscaling:EC2_INSTANCE_LAUNCHING':
             history[dateTime] = 1
-        elif action == 'autoscaling:EC2_INSTANCE_TERMINATE':
+        elif action == 'autoscaling:EC2_INSTANCE_TERMINATING':
             history[dateTime] = 2
     return history
 

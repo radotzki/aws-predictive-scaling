@@ -2,15 +2,20 @@
 Author: Mor Sides
 Purpose: Wrapper classes for AWS EC2, SQS and Auto Scaling groups
 """
-import boto3
-import time
 import json
+import time
+
+import boto3
 
 global ec2 #ec2 connection
 
 action_duration_in_seconds = 120 # = 2 minutes
 auto_scaling_group_lc = "lc-git-MySql3Copy"
 auto_scaling_group_name = "my-asg-lbs"
+
+AWS_ACCESS_KEY_ID='***'
+AWS_SECRET_ACCESS_KEY='***'
+AWS_DEFAULT_REGION='us-east-2'
 
 
 class ec2(object):
@@ -190,7 +195,8 @@ class autoscaling_group(object):
             ])
 class sqs(object):
     def __init__(self, url):
-        self.sqs = boto3.resource('sqs')
+        self.sqs = boto3.resource('sqs', region_name=AWS_DEFAULT_REGION, aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         self.queue = self.sqs.Queue(url)
 
     def receive_messages(self, max_queue_messages = 10):
@@ -229,7 +235,7 @@ class sqs(object):
         history = {}
         for message in messages:
             #save the scaling activity event and time
-            history[message["StartTime"]] = message["Event"]
+            history[message["Time"]] = message["LifecycleTransition"]
         file.write(str(history))
         file.close()
         print "scaling history saved!"
@@ -239,3 +245,5 @@ def shutdown_all_system():
     asg = autoscaling_group(auto_scaling_group_name)
     asg.stop_and_wait()
     ec2obj.stop_all()
+
+
