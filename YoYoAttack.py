@@ -1,10 +1,9 @@
 import datetime
-import subprocess
-from subprocess import Popen
 import time
+from subprocess import Popen
 
-import pytz
 import boto3
+import pytz
 
 AWS_ACCESS_KEY_ID='***'
 AWS_SECRET_ACCESS_KEY='***'
@@ -21,9 +20,9 @@ stop_ports[4445] = False
 stop_ports[4446] = False
 stop_ports[4447] = False
 
+
 def jmeter_user_on(probnum=0):
-    returned_value = Popen(JMETER_USER_PROB_ON.format(prob=probnum), shell=True)  # returns the exit code in unix
-    print('returned value:', returned_value)
+    Popen(JMETER_USER_PROB_ON.format(prob=probnum), shell=True, stdin=None, stdout=None)
     # Return the port number
     max_port = 0
     for port in stop_ports:
@@ -36,12 +35,12 @@ def jmeter_user_on(probnum=0):
 
 
 def jmeter_user_off(port):
-    returned_value = Popen(JMETER_STOP+" "+ str(port), shell=True)
+    returned_value = Popen(JMETER_STOP+" "+ str(port), shell=True, stdin=None, stdout=None)
     print('returned value:', returned_value)
 
+
 def jmeter_attack_on():
-    returned_value = Popen(JMETER_YOYO_ATTACK_ON, shell=True)  # returns the exit code in unix
-    print('returned value:', returned_value)
+    Popen(JMETER_YOYO_ATTACK_ON, shell=True, stdin=None, stdout=None)
     # Return the port number
     max_port = 0
     for port in stop_ports:
@@ -54,14 +53,16 @@ def jmeter_attack_on():
 
 
 def jmeter_attack_off(port):
-    returned_value = Popen(JMETER_STOP+" "+ str(port), shell=True)
-    print('returned value:', returned_value)
+    Popen(JMETER_STOP+" "+ str(port), shell=True, stdin=None, stdout=None)
+
 
 def prob(prob_duration):
     global g_probnum
     port = jmeter_user_on(g_probnum)
+    print("User traffic simulation is on (port {0}), *sleeping* for {1}".format(port, prob_duration))
     time.sleep(prob_duration)
     jmeter_user_off(port)
+    print("User traffic simulation is off (port {0})".format(port))
     g_probnum = g_probnum + 1
 
 
@@ -72,16 +73,13 @@ def get_amount_of_running_machines():
 
 
 def wait_for_steady_state(amount_of_machine_at_steady_state, sleep_between_checks=20, with_prob=False):
-    print "     Wait for steady state"
     while True:
         time.sleep(sleep_between_checks)
         current_amount_of_running_machines = get_amount_of_running_machines()
+        print("Amount of running servers: {0}".format(current_amount_of_running_machines))
         # print "         current amount of running machines " + str(current_amount_of_running_machines)
         # if amount_of_machine_at_steady_state*2 >= current_amount_of_running_machines:
         if amount_of_machine_at_steady_state == current_amount_of_running_machines:
-            print "         Now " + str(
-                datetime.datetime.now(pytz.utc)) + ": current amount of running machines " + str(
-                current_amount_of_running_machines)
             # wait a littel bit more, just to verify the all scaling activity recieve at the sqs
             time.sleep(sleep_between_checks / 2)
             break
@@ -99,8 +97,10 @@ def yoyo_attack_with_probs(cycles, sleep_between_cycles):
         amount_of_running_machines_before_attack = get_amount_of_running_machines()
         now = datetime.datetime.now()
         port = jmeter_attack_on()
+        print("YoYo attack cycle {0} has started at {1}".format(i, now))
         attack_log[now] = "start"
-        print "     Now " + str(now) + ": Wait " + str(sleep_between_cycles) + " seconds"
+
+        print("Running probe cycles...")
         current_sleep_between_cycles = sleep_between_cycles
         while current_sleep_between_cycles > 0:
             time_before_prob = time.time()
@@ -108,11 +108,16 @@ def yoyo_attack_with_probs(cycles, sleep_between_cycles):
             time.sleep(20)
             time_after_prob = time.time()
             current_sleep_between_cycles = current_sleep_between_cycles - (time_before_prob - time_after_prob)
+            print("Probe took {0}. current_sleep_between_cycles = {1}".format(time_after_prob - time_before_prob,
+                                                                              current_sleep_between_cycles))
 
+        print("Probe ended. Sleeping for {0}...".format(sleep_between_cycles))
         time.sleep(sleep_between_cycles)
         now = datetime.datetime.now()
         jmeter_attack_off(port)
+        print("YoYo attack cycle {0} has ended at {1}".format(i, now))
         attack_log[now] = "stop"
+        print("Waiting for the amount of servers to decrease to {0}".format(amount_of_running_machines_before_attack))
         wait_for_steady_state(amount_of_running_machines_before_attack, 20, True)
 
     return attack_log
@@ -129,6 +134,6 @@ def save_attack_log(attack_log, attack_log_filepath):
     print "attack log saved!"
 
 
-if _name_ == '_main_':
+if __name__ == '_main_':
     attack_log = yoyo_attack_with_probs(2, 60*5)
     save_attack_log(attack_log, 'C:\\Users\\Administrator\\Desktop\\results\\attack_log.txt')
