@@ -13,8 +13,9 @@ import datetime
 import pytz
 import collections
 import numpy
-import matplotlib.pyplot as plt
 import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from matplotlib.ticker import Formatter
 import matplotlib.gridspec as gridspec
 matplotlib.rcParams.update({'font.size': 14.7})
