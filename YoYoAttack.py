@@ -59,11 +59,15 @@ def jmeter_attack_off(port):
 def prob(prob_duration):
     global g_probnum
     port = jmeter_user_on(g_probnum)
-    print("User traffic simulation is on (port {0}), *sleeping* for {1}".format(port, prob_duration))
-    time.sleep(prob_duration)
-    jmeter_user_off(port)
-    print("User traffic simulation is off (port {0})".format(port))
-    g_probnum = g_probnum + 1
+    try:
+        print("User traffic simulation is on (port {0}), *sleeping* for {1}".format(port, prob_duration))
+        time.sleep(prob_duration)
+        jmeter_user_off(port)
+        print("User traffic simulation is off (port {0})".format(port))
+        g_probnum = g_probnum + 1
+    except (KeyboardInterrupt, SystemExit):
+        jmeter_user_off(port)
+        raise
 
 
 def get_amount_of_running_machines():
@@ -97,28 +101,32 @@ def yoyo_attack_with_probs(cycles, sleep_between_cycles):
         amount_of_running_machines_before_attack = get_amount_of_running_machines()
         now = datetime.datetime.now()
         port = jmeter_attack_on()
-        print("YoYo attack cycle {0} has started at {1}".format(i, now))
-        attack_log[now] = "start"
+        try:
+            print("YoYo attack cycle {0} has started at {1}".format(i, now))
+            attack_log[now] = "start"
 
-        print("Running probe cycles...")
-        current_sleep_between_cycles = sleep_between_cycles
-        while current_sleep_between_cycles > 0:
-            time_before_prob = time.time()
-            prob(10)
-            time.sleep(20)
-            time_after_prob = time.time()
-            current_sleep_between_cycles = current_sleep_between_cycles - (time_before_prob - time_after_prob)
-            print("Probe took {0}. current_sleep_between_cycles = {1}".format(time_after_prob - time_before_prob,
-                                                                              current_sleep_between_cycles))
+            print("Running probe cycles...")
+            current_sleep_between_cycles = sleep_between_cycles
+            while current_sleep_between_cycles > 0:
+                time_before_prob = time.time()
+                prob(10)
+                time.sleep(20)
+                time_after_prob = time.time()
+                current_sleep_between_cycles = current_sleep_between_cycles - (time_before_prob - time_after_prob)
+                print("Probe took {0}. current_sleep_between_cycles = {1}".format(time_after_prob - time_before_prob,
+                                                                                  current_sleep_between_cycles))
 
-        print("Probe ended. Sleeping for {0}...".format(sleep_between_cycles))
-        time.sleep(sleep_between_cycles)
-        now = datetime.datetime.now()
-        jmeter_attack_off(port)
-        print("YoYo attack cycle {0} has ended at {1}".format(i, now))
-        attack_log[now] = "stop"
-        print("Waiting for the amount of servers to decrease to {0}".format(amount_of_running_machines_before_attack))
-        wait_for_steady_state(amount_of_running_machines_before_attack, 20, True)
+            print("Probe ended. Sleeping for {0}...".format(sleep_between_cycles))
+            time.sleep(sleep_between_cycles)
+            now = datetime.datetime.now()
+            jmeter_attack_off(port)
+            print("YoYo attack cycle {0} has ended at {1}".format(i, now))
+            attack_log[now] = "stop"
+            print("Waiting for the amount of servers to decrease to {0}".format(amount_of_running_machines_before_attack))
+            wait_for_steady_state(amount_of_running_machines_before_attack, 20, True)
+        except (KeyboardInterrupt, SystemExit):
+            jmeter_attack_off(port)
+            raise
 
     return attack_log
 
