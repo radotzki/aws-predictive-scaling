@@ -236,7 +236,7 @@ class sqs(object):
         for message in messages:
             #save the scaling activity event and time
             history[message["Time"]] = message["LifecycleTransition"]
-        file.write(str(history))
+        file.write(json.dumps(history))
         file.close()
         print "scaling history saved!"
 

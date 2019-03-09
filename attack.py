@@ -225,7 +225,7 @@ def main():
         utils.shutdown_all_system()
 
         #continue collect results
-        sqs.save_scaling_history(local_results_dir+r"\\"+results_directory_name+"_"+results_file_name+"_scaling_log.txt")
+        sqs.save_scaling_history(local_results_dir+r"\\"+results_directory_name+"_"+results_file_name+"_scaling_log.json")
         save_attack_log(attack_log, local_results_dir+r"\\"+results_directory_name+"_"+results_file_name+"_attack_log.txt")
 
     #except:

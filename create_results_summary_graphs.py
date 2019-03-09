@@ -7,6 +7,7 @@ Input: The script expects 3 files -
 3. attack.py logs (start and end times)
 """
 
+import json
 import dateutil.parser
 import datetime
 import pytz
@@ -20,10 +21,14 @@ matplotlib.rcParams.update({'font.size': 14.7})
 
 results_dir = "./logs/"
 
+
 class ErrorRowException(Exception):
     pass
+
+
 class RejectRow(Exception):
     pass
+
 
 class Row(object):
     def __init__(self, row_data):
@@ -31,27 +36,26 @@ class Row(object):
         if row_arr[0].isalpha():
             raise ValueError
         if row_arr[7] == "true":
-            self.time = datetime.datetime.strptime(row_arr[0], "%Y/%m/%d %H:%M:%S.%f")
+            self.time = datetime.datetime.fromtimestamp(int(row_arr[0]) / 1000.0)
             self.response_time = int(row_arr[1])
-            self.ip = row_arr[4]
             self.bin = None
         else:
             raise ErrorRowException
 
-
     def __str__(self):
-        return "time " + str(self.time)
+        return "time: {0}, response_time: {1}, bin: {2}".format(self.time, self.response_time, self.bin)
+
 
 class ErrorRow(object):
     def __init__(self, row_data):
         row_arr = row_data.split(',')
         if row_arr[0].isalpha():
-			raise ValueError
+            raise ValueError
         if row_arr[7] == "false":
-            if "SocketException" in row_arr[3]:
+            if ("SocketException" in row_arr[3]) or ("BindException" in row_arr[3]):
                 raise RejectRow
-            elif "NoHttpResponseException" in row_arr[3]:
-                self.time = datetime.datetime.strptime(row_arr[0], "%Y/%m/%d %H:%M:%S.%f")
+            elif "504" in row_arr[3]:
+                self.time = datetime.datetime.fromtimestamp(int(row_arr[0]) / 1000.0)
                 self.bin = None
             else:
                 raise ValueError
@@ -59,7 +63,8 @@ class ErrorRow(object):
             raise ValueError
 
     def __str__(self):
-        return "time " + str(self.time)
+        return "time: {0}, bin: {1} ".format(self.time, self.bin)
+
 
 class Bin(object):
     next_id = 0
@@ -90,18 +95,19 @@ class Bin(object):
         #return_str = "start time: " + str(self.start_time) + "\nend time: " + str(self.end_time)+"\nmachines: " + str(self.machines) +"\nerrors: " + str(self.count_errors) + "\nerror percent: " + str(self.error_percent) + "\nsum response: " + str(self.sum_response) + "\ncount response: " + str(self.count_response)+"\navg response: " + str(self.avg_response)
         return return_str
 
+
 def parse_scaling_activity(scaling_activity_data):
     history = {}
-    parts = scaling_activity_data[1:-1].split(", ")
-    for part in parts:
-        dateTime = dateutil.parser.parse(part.split(": ")[0][2:-1])
+    parts = json.loads(scaling_activity_data)
+    for date_str, action in parts.iteritems():
+        dateTime = datetime.datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
         dateTime = dateTime.replace(tzinfo=None)
-        action = part.split(": ")[1][2:-1]
         if action == 'autoscaling:EC2_INSTANCE_LAUNCHING':
             history[dateTime] = 1
         elif action == 'autoscaling:EC2_INSTANCE_TERMINATING':
             history[dateTime] = 2
     return history
+
 
 def parse_attack_log(attack_log_data):
     attack = {}
@@ -128,11 +134,13 @@ def parse_results_file(results_file_path):
                     error_rows.append(ErrorRow(line))
                 except RejectRow:
                     pass
-            except ValueError:
+            except ValueError as e:
+                print("ValueError: %s" % e.message)
                 value_error = value_error + 1
+
     print "success: " + str(len(rows)) + " (after parse)"
     print "failure: " + str(len(error_rows)) + " (after parse)"
-    return rows,error_rows
+    return rows, error_rows
 
 def get_first_row_time(rows):
     first_time = datetime.datetime.now()
@@ -254,9 +262,11 @@ def create_results_summary(scaling_history_filepath, attack_results_filepath, us
     #parse scaling activity log while machines is on and off
     scaling_activity_data = open(scaling_history_filepath,'r').read()
     history = parse_scaling_activity(scaling_activity_data)
+    # print("Scaling:\n%s", str(history))
 
     attack_log_data = open(attack_log_filepath,'r').read()
     attack_log = parse_attack_log(attack_log_data)
+    # print("Attack log:\n%s", str(attack_log))
 
     bins = []
     if by_interval == 0:
@@ -589,15 +599,19 @@ def main():
         # file_name = r"20160102_results_134248.csv"
         # results_file = results_dir+file_name
         #scaling_log = results_dir+sys.argv[2]
-        scaling_log = results_dir + "scaling_log.txt"
+        scaling_log = results_dir + "scaling_log.json"
         #attack_log = results_dir+sys.argv[3]
         attack_log = results_dir+ "attack_log.txt"
 
         results_file = results_dir+"attack_results_log.csv"
-        users_file = results_dir+"attack_results_log.csv"
+        # users_file = results_dir+"attack_results_log.csv"
+        users_file = None
         #users_file = None
         #max_time = datetime.datetime.strptime("2015/12/31 11:00:00.000", "%Y/%m/%d %H:%M:%S.%f")
         bins, attack_log = create_results_summary(scaling_log, results_file, users_file, attack_log, 30)
+        # Debug prints
+        # print("Bins:\n%s" % '\n\n'.join(map(str, bins)))
+        # print("Attack log:\n%s", str(attack_log))
 
 
         #create_graph(bins, attack_log, results_dir+file_name[:-4]+"_7.png")
