@@ -22,7 +22,7 @@ stop_ports[4447] = False
 
 
 def jmeter_user_on(probnum=0):
-    Popen(JMETER_USER_PROB_ON.format(prob=probnum), shell=True, stdin=None, stdout=None)
+    Popen(JMETER_USER_PROB_ON.format(prob=probnum), shell=True, stdin=None, stdout=None, stderr=None)
     # Return the port number
     max_port = 0
     for port in stop_ports:
@@ -35,12 +35,11 @@ def jmeter_user_on(probnum=0):
 
 
 def jmeter_user_off(port):
-    returned_value = Popen(JMETER_STOP+" "+ str(port), shell=True, stdin=None, stdout=None)
-    print('returned value:', returned_value)
+    Popen(JMETER_STOP+" "+ str(port), shell=True, stdin=None, stdout=None, stderr=None)
 
 
 def jmeter_attack_on():
-    Popen(JMETER_YOYO_ATTACK_ON, shell=True, stdin=None, stdout=None)
+    Popen(JMETER_YOYO_ATTACK_ON, shell=True, stdin=None, stdout=None, stderr=None)
     # Return the port number
     max_port = 0
     for port in stop_ports:
@@ -53,7 +52,7 @@ def jmeter_attack_on():
 
 
 def jmeter_attack_off(port):
-    Popen(JMETER_STOP+" "+ str(port), shell=True, stdin=None, stdout=None)
+    Popen(JMETER_STOP+" "+ str(port), shell=True, stdin=None, stdout=None, stderr=None)
 
 
 def prob(prob_duration):
