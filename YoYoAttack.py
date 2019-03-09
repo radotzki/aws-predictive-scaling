@@ -66,9 +66,9 @@ def prob(prob_duration):
 
 
 def get_amount_of_running_machines():
-    ec2 = boto3.resource('ec2',region_name='us-east-2', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}, {'Name': 'key-name', 'Values':['group7']}])
-    return len(list(instances))
+    client = boto3.client('elb',region_name=AWS_DEFAULT_REGION, aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    response = client.describe_load_balancers(LoadBalancerNames=['YoYoLBNodejs'])
+    return len(response['LoadBalancerDescriptions'][0]['Instances'])
 
 
 def wait_for_steady_state(amount_of_machine_at_steady_state, sleep_between_checks=20, with_prob=False):
